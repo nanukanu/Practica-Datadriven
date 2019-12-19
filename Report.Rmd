@@ -1,28 +1,95 @@
 ---
-title: "Report"
+title: "Practica DataDriven"
 output: html_document
+
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
+library(knitr)
+library(markdown)
+library(readr)
+library(stringr)
+library(iptools)
+library(IPtoCountry)
+library(rgeolocate)
+library(dplyr)
+library(kableExtra)
+
+
+```
+## Presentación y Geolocalización de Malware 
+
+En el presente Markdown se van a presentar los principales paises generadores de Malware según el listado extraido de FireHol del feed de Malware.
+
+```{r} 
+
+# read txt data into df
+malwaredomainlist.ipset <- read.table("/Volumes/Extreme SSD/Repo_Git/Practica DataDriven/alienvault_reputation.ipset.txt", quote="\"", stringsAsFactors=FALSE)
+
+file_header <- read.delim(file = "./alienvault_reputation.ipset.txt", stringsAsFactors = F)
+
+#Millora Llegir directament d'URL
+
+#Renombrar Columna header
+colnames(file_header) <-"line"
+
+##### clean data ----
+
+## rename columns
+# Copiar columna
+malwaredomainlist.ipset$ips <- malwaredomainlist.ipset$V1
+
+
+#Eliminar columna inicial
+malwaredomainlist.ipset$V1 <- NULL
+
+
+
+## add data from heading
+
+# DATE
+date_line_number <- grep(pattern = "# Source File Date:", x = file_header$line, fixed = T)
+dataset_date <- str_split(file_header[date_line_number,],  pattern = ':', n = 2)[[1]][[2]]
+dateset_date_trimmed <- str_trim(dataset_date)
+malwaredomainlist.ipset$date <- dateset_date_trimmed
+
+# CATEGORY
+category_line <- grep(pattern = "# Category", x =file_header$line, fixed = T)
+a <- str_split(file_header[category_line,], pattern = ':')[[1]][[2]]
+category_trimmed <- str_trim(a)
+malwaredomainlist.ipset$Category <- category_trimmed
+
+# UPDATE FREQ
+category_line <- grep(pattern = "# Update Frequency", x =file_header$line, fixed = T)
+a <- str_split(file_header[category_line,], pattern = ':')[[1]][[2]]
+category_trimmed <- str_trim(a)
+malwaredomainlist.ipset$UpdateFreq <- category_trimmed
+
+
+# COUNTRY
+
+#category_line <- grep(pattern = "# Update Frequency", x =file_header$line, fixed = T)
+#a <- str_split(file_header[category_line,], pattern = ':')[[1]][[2]]
+#category_trimmed <- str_trim(a)
+malwaredomainlist.ipset$Country <- IP_country(malwaredomainlist.ipset$ips)
+
+countcountry <- malwaredomainlist.ipset %>% count(Country, sort = TRUE)
+
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+En el siguiente mapa se muestra la distribución de Malware por paises:
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+IP_plot(malwaredomainlist.ipset$ips)
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+En la siguiente tabla se muestra la cantidad de incidencias agrupadas por pais:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+kable(countcountry) %>% kable_styling(bootstrap_options = "hover", full_width = F, fixed_thead = T)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+

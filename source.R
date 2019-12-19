@@ -1,14 +1,27 @@
 # load libraries ----
+
 library(readr)
 library(stringr)
 library(iptools)
 library(IPtoCountry)
 library(rgeolocate)
+library(dplyr)
+library(kableExtra)
+
+
+
 
 # read txt data into df
-malwaredomainlist.ipset <- read.table("/Volumes/Extreme SSD/Repo_Git/Practica DataDriven/malwaredomainlist.ipset.txt", quote="\"", stringsAsFactors=FALSE)
+Carga_Fichero <- function(url_file){ 
+  
+#malwaredomainlist.ipset <- read.table("/Volumes/Extreme SSD/Repo_Git/Practica DataDriven/malwaredomainlist.ipset.txt", quote="\"", stringsAsFactors=FALSE)
+#file_header <- read.delim(file = "/Volumes/Extreme SSD/Repo_Git/Practica DataDriven/malwaredomainlist.ipset.txt", stringsAsFactors = F)
 
-file_header <- read.delim(file = "./malwaredomainlist.ipset.txt", stringsAsFactors = F)
+malwaredomainlist.ipset <- read.table(url_file, quote="\"", stringsAsFactors=FALSE)
+file_header <- read.delim(file = url_file, stringsAsFactors = F)
+
+
+
 
 #Millora Llegir directament d'URL
 
@@ -25,7 +38,6 @@ malwaredomainlist.ipset$ips <- malwaredomainlist.ipset$V1
 #Eliminar columna inicial
 malwaredomainlist.ipset$V1 <- NULL
 
-#charips <- malwaredomainlist.ipset
 
 
 ## add data from heading
@@ -49,9 +61,31 @@ category_trimmed <- str_trim(a)
 malwaredomainlist.ipset$UpdateFreq <- category_trimmed
 
 
+# COUNTRY
+
+#category_line <- grep(pattern = "# Update Frequency", x =file_header$line, fixed = T)
+#a <- str_split(file_header[category_line,], pattern = ':')[[1]][[2]]
+#category_trimmed <- str_trim(a)
+malwaredomainlist.ipset$Country <- IP_country(malwaredomainlist.ipset$ips)
+return (malwaredomainlist.ipset)
+}
+
+Dataset1 <- Carga_Fichero ("/Volumes/Extreme SSD/Repo_Git/Practica DataDriven/malwaredomainlist.ipset.txt")
+#Dataset2 <- Carga_Fichero ("/Volumes/Extreme SSD/Repo_Git/Practica DataDriven/alienvault_reputation.ipset.txt")
+
+#ipscomunes <- merge(Dataset1$ips,Dataset2$ips)
+
+countcountry <- Dataset1 %>% count(Country, sort = TRUE)
+
+kable(countcountry)
+
 # prepare graphics
 
+#IP_plot(Dataset1$ips)
+
 #IP_plot("2.2.2.2")
+
+
 
 
 
